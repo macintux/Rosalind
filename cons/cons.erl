@@ -31,7 +31,7 @@
 
 -module(cons).
 -include_lib("eunit/include/eunit.hrl").
--export([file/1, run/1, o/1]).
+-export([file/1, run/1, o/1, o/2]).
 
 %% Use first key returned by fetch_keys, grab that value, and size it
 fafsa_length(Dict) ->
@@ -126,10 +126,10 @@ run(Seq) ->
     { Cons, Matrix }.
 
 sample_cons_test() ->
-    {Cons, Matrix} = run(process_lines(test_long_fasta())),
+    {Cons, Matrix} = run(string:join(test_long_fasta(), "\n")),
     ?assertEqual("ATGCAACT", Cons),
-    ?assertEqual(proplists:get_value("C", Matrix),
-                 [0, 0, 1, 4, 2, 0, 6, 1]),
+    ?assertEqual({0, 0, 1, 4, 2, 0, 6, 1},
+                 proplists:get_value($C, Matrix)),
     ok.
 
 %% The file sample.cons has this, but here also:
@@ -152,16 +152,19 @@ test_long_fasta() ->
     ].
     
 
-o(Char, List) ->
-    io:format("~c: ~s~n", [Char,
-                           string:join(lists:map(fun(X) -> integer_to_list(X) end,
-                                                 tuple_to_list(List)),
-                                       " ")]).
+orow(Char, List) ->
+    io_lib:format("~c: ~s", [Char,
+                             string:join(lists:map(fun(X) -> integer_to_list(X) end,
+                                                   tuple_to_list(List)),
+                                         " ")]).
 
 o({Cons, Matrix}) ->
-    io:format("~s~n", [Cons]),
-    o($A, proplists:get_value($A, Matrix)),
-    o($C, proplists:get_value($C, Matrix)),
-    o($G, proplists:get_value($G, Matrix)),
-    o($T, proplists:get_value($T, Matrix)).
+    o({Cons, Matrix}, standard_io).
+
+o({Cons, Matrix}, FH) ->
+    io:format(FH, "~s~n", [Cons]),
+    io:format(FH, "~s~n", [orow($A, proplists:get_value($A, Matrix))]),
+    io:format(FH, "~s~n", [orow($C, proplists:get_value($C, Matrix))]),
+    io:format(FH, "~s~n", [orow($G, proplists:get_value($G, Matrix))]),
+    io:format(FH, "~s~n", [orow($T, proplists:get_value($T, Matrix))]).
     
