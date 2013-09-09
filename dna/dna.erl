@@ -11,12 +11,16 @@
 
 -module(dna).
 -export([run/1]).
+-include_lib("eunit/include/eunit.hrl").
 
 run(Seq) ->
-    run(Seq, {0, 0, 0, 0}).
+    output_tally(run(Seq, {0, 0, 0, 0})).
 
+%% For testing, with 'noout' as first arg
+run(noout, Seq) ->
+    run(Seq, {0, 0, 0, 0});
 run([], Tally) ->
-    output_tally(Tally);
+    Tally;
 run([H|T], Tally) when H == $A ->
     run(T, setelement(1, Tally, element(1, Tally) + 1));
 run([H|T], Tally) when H == $C ->
@@ -28,3 +32,11 @@ run([H|T], Tally) when H == $T ->
 
 output_tally({A, C, G, T}) ->
     io:format("~B ~B ~B ~B~n", [A, C, G, T]).
+
+
+dna_test_() ->
+    [?_assert(run(noout, "A") =:= {1, 0, 0, 0}),
+     ?_assert(run(noout, "AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGC") =/= {20, 12, 17, 23}),
+     ?_assert(run(noout, "AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGC") =:= {20, 12, 17, 21}),
+     ?_assertException(error, function_clause, run(noout, "B"))
+    ].
