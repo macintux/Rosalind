@@ -22,8 +22,7 @@
 
 -module(gc).
 -include_lib("eunit/include/eunit.hrl").
-%%-export([file/1, run/1, o/1]).
--compile(export_all).
+-export([file/1, run/1, o/1]).
 
 file(Filename) ->
     {ok, FH} = file:open(Filename, [read]),
@@ -116,3 +115,5 @@ test_long_fasta() ->
     ].
     
 
+o({ID, GC}) ->
+    io:format("~s~n~.6f~n", [ID, GC * 100]).
