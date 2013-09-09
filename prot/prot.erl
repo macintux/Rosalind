@@ -10,7 +10,13 @@
 
 -module(prot).
 -include_lib("eunit/include/eunit.hrl").
--export([run/1, o/1]).
+-export([run/1, file/1, o/1]).
+
+file(Filename) ->
+    {ok, FH} = file:open(Filename, [read]),
+    {ok, Contents} = file:read(FH, 10000),
+    file:close(FH),
+    run(Contents).
 
 run(Seq) ->
     run(Seq, [], mapping()).
