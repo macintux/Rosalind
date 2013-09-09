@@ -10,7 +10,7 @@
 %% 20 As, 12 Cs, 17 Gs, 21 Ts
 
 -module(dna).
--export([run/1, output/1]).
+-export([run/1, o/1]).
 -include_lib("eunit/include/eunit.hrl").
 
 run(Seq) ->
@@ -27,7 +27,7 @@ run([H|T], Tally) when H == $G ->
 run([H|T], Tally) when H == $T ->
     run(T, setelement(4, Tally, element(4, Tally) + 1)).
 
-output({A, C, G, T}) ->
+o({A, C, G, T}) ->
     io:format("~B ~B ~B ~B~n", [A, C, G, T]).
 
 
