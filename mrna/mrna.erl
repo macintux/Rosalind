@@ -13,11 +13,12 @@
 -export([run/1, o/1]).
 
 run(Seq) ->
-    lists:foldl(fun(X, Accum) ->
+    (lists:foldl(fun(X, Accum) ->
                         dict:fetch(X, mapping()) * Accum
                 end,
                 1,
-                Seq) * dict:fetch(stop, mapping()).
+                Seq) * dict:fetch(stop, mapping()))
+        rem 1000000.
                          
 mrna_test_() ->
     [?_assert(12 =:= run("MA"))
