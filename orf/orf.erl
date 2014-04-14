@@ -16,7 +16,8 @@
 
 -module(orf).
 -include_lib("eunit/include/eunit.hrl").
--export([run/1, file/1, o/1, sample_run/0]).
+-compile(export_all).
+%% -export([run/1, file/1, o/1, sample_run/0]).
 
 
 %% Fasta handling, should create a new module for all this
@@ -74,31 +75,50 @@ file(Filename) ->
     run(Contents).
 
 run(Seq) ->
-    RNA = hd(map_fasta_values(parse_fasta(split_lines(Seq)),
-                              fun dna2rna/1)),
-    find_orfs(RNA, []).
+    
+    {DNA1, DNA2} =
+        hd(map_fasta_values(parse_fasta(split_lines(Seq)),
+                            fun(X) -> {X, revc(X)} end)),
+    o(find_orfs(DNA1, [])),
+    o(find_orfs(DNA2, [])).
 
 find_orfs([], Accum) ->
     Accum;
 %% Start codon is AUG
 find_orfs([$A, $U, $G|_Tail]=Seq, Accum) ->
-    {Protein, Rest} = rna2prot(Seq, [], mapping()),
+    {Protein, Rest} = dna2prot(Seq),
     find_orfs(Rest, Accum ++ [Protein]);
 find_orfs([_H|T], Accum) ->
     find_orfs(T, Accum).
 
+dna2prot(DNA) ->
+    dna2prot(DNA, [], dna_codon()).
 
-rna2prot([], New, _Map) ->
+dna2prot([], New, _Map) ->
     {lists:reverse(lists:flatten(New)), []};
-rna2prot([A,B,C|T], New, Map) ->
+dna2prot([A,B,C|T], New, Map) ->
     do_map(T, dict:find([A, B, C], Map), New, Map).
 
 do_map(Next, {ok, stop}, Accum, _Map) ->
     {lists:reverse(lists:flatten(Accum)), Next};
 do_map(Next, {ok, Mapping}, Accum, Map) ->
-    rna2prot(Next, [Mapping|Accum], Map);
+    dna2prot(Next, [Mapping|Accum], Map);
 do_map(_Next, error, _Accum, _Map) ->
     throw(no_such_sequence).
+
+revc(DNA) ->
+    revc(DNA, []).
+
+revc([], New) ->
+    New; %% No need to reverse, that's one of the criteria for the problem
+revc([H|T], New) when H =:= $T ->
+    revc(T, [$A|New]);
+revc([H|T], New) when H =:= $A ->
+    revc(T, [$T|New]);
+revc([H|T], New) when H =:= $C ->
+    revc(T, [$G|New]);
+revc([H|T], New) when H =:= $G ->
+    revc(T, [$C|New]).
 
 o([]) ->
     ok;
@@ -117,7 +137,74 @@ orf_test_() ->
                               "MTPRLGLESLLE"])
     ].
 
-mapping() ->
+
+dna_codon() ->
+    dict:from_list([{"TTT", "F"},
+                    {"TTC", "F"},
+                    {"TTA", "L"},
+                    {"TTG", "L"},
+                    {"TCT", "S"},
+                    {"TCC", "S"},
+                    {"TCA", "S"},
+                    {"TCG", "S"},
+                    {"TAT", "Y"},
+                    {"TAC", "Y"},
+                    {"TAA", stop},
+                    {"TAG", stop},
+                    {"TGT", "C"},
+                    {"TGC", "C"},
+                    {"TGA", stop},
+                    {"TGG", "W"},
+                    {"CTT", "L"},
+                    {"CTC", "L"},
+                    {"CTA", "L"},
+                    {"CTG", "L"},
+                    {"CCT", "P"},
+                    {"CCC", "P"},
+                    {"CCA", "P"},
+                    {"CCG", "P"},
+                    {"CAT", "H"},
+                    {"CAC", "H"},
+                    {"CAA", "Q"},
+                    {"CAG", "Q"},
+                    {"CGT", "R"},
+                    {"CGC", "R"},
+                    {"CGA", "R"},
+                    {"CGG", "R"},
+                    {"ATT", "I"},
+                    {"ATC", "I"},
+                    {"ATA", "I"},
+                    {"ATG", "M"},
+                    {"ACT", "T"},
+                    {"ACC", "T"},
+                    {"ACA", "T"},
+                    {"ACG", "T"},
+                    {"AAT", "N"},
+                    {"AAC", "N"},
+                    {"AAA", "K"},
+                    {"AAG", "K"},
+                    {"AGT", "S"},
+                    {"AGC", "S"},
+                    {"AGA", "R"},
+                    {"AGG", "R"},
+                    {"GTT", "V"},
+                    {"GTC", "V"},
+                    {"GTA", "V"},
+                    {"GTG", "V"},
+                    {"GCT", "A"},
+                    {"GCC", "A"},
+                    {"GCA", "A"},
+                    {"GCG", "A"},
+                    {"GAT", "D"},
+                    {"GAC", "D"},
+                    {"GAA", "E"},
+                    {"GAG", "E"},
+                    {"GGT", "G"},
+                    {"GGC", "G"},
+                    {"GGA", "G"},
+                    {"GGG", "G"}]).
+
+rna_codon() ->
     dict:from_list([{"UUU", "F"},
                     {"CUU", "L"},
                     {"AUU", "I"},
